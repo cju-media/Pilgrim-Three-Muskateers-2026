@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Musketeers - DCA Cues</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1c1f25; --panel2: #23272f; --line: #323843; --text: #e8eaee; --dim: #8d95a3;
+    --live: #2fbf71; --mute: #d0454c; --accent: #f2b33d; --cue: #e0323c;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.35 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; display: grid; grid-template-columns: 290px 1fr; grid-template-rows: auto 1fr; overflow: hidden; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .02em; }
+  .status { display: flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12.5px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); }
+  .dot.on { background: var(--live); } .dot.off { background: var(--mute); } .dot.dry { background: var(--accent); }
+  header form { margin-left: auto; display: flex; gap: 6px; align-items: center; color: var(--dim); font-size: 12.5px; }
+  header input { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 5px 7px; border-radius: 5px; width: 130px; font: inherit; font-size: 12.5px; }
+  header input.port { width: 62px; }
+  .btn { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 11px; }
+  .btn:hover { border-color: var(--dim); }
+
+  /* cue list */
+  nav { overflow-y: auto; background: var(--panel); border-right: 1px solid var(--line); padding-bottom: 40px; }
+  .act { padding: 10px 12px 4px; font-size: 11px; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; }
+  .scene { padding: 7px 12px 3px; font-weight: 650; font-size: 12.5px; color: var(--accent); border-top: 1px solid var(--line); }
+  .scene span { color: var(--dim); font-weight: 400; }
+  .cue { display: grid; grid-template-columns: 52px 1fr; gap: 6px; width: 100%; text-align: left; padding: 4px 12px; border: 0; background: none; border-left: 3px solid transparent; font-size: 12.5px; }
+  .cue:hover { background: var(--panel2); }
+  .cue b { font-variant-numeric: tabular-nums; }
+  .cue.current { background: #3a1d21; border-left-color: var(--cue); }
+  .cue.next { border-left-color: var(--accent); }
+  .cue i { font-style: normal; color: var(--dim); }
+  .cue.current i { color: var(--text); }
+
+  main { display: grid; grid-template-rows: auto auto 1fr; min-height: 0; min-width: 0; }
+
+  .now { display: flex; align-items: stretch; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .nowbox { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 9px 13px; }
+  .chg small { color: var(--dim); }
+  .nowbox > small { display: block; color: var(--dim); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .nowbox .id { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .nowbox.cur .id { color: #ff6b73; }
+  .nowbox.nxt .id { color: var(--accent); font-size: 22px; }
+  .nowbox .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nowbox .chg { font-size: 12.5px; margin-top: 3px; min-height: 17px; }
+  .chg .u { color: var(--live); } .chg .m { color: #ff7a80; }
+  .go { display: flex; flex-direction: column; gap: 7px; }
+  .go button { border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); padding: 0 20px; }
+  #go { flex: 1; background: var(--live); border-color: var(--live); color: #06240f; font-size: 22px; font-weight: 750; min-width: 130px; }
+  #go:active { filter: brightness(.85); }
+  #back { height: 32px; font-size: 12.5px; }
+
+  /* DCA strip */
+  .dcas { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 5px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .dca { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 4px 6px; text-align: center; min-width: 0; }
+  .dca .n { font-size: 10px; color: var(--dim); }
+  .dca .nm { font-weight: 650; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 17px; }
+  .dca .ch { font-size: 10.5px; color: var(--dim); }
+  .dca .st { margin-top: 4px; font-size: 10px; font-weight: 700; letter-spacing: .06em; border-radius: 3px; padding: 1px 0; }
+  .dca.live { border-color: var(--live); } .dca.live .st { background: var(--live); color: #06240f; }
+  .dca.muted .st { background: var(--mute); color: #fff; } .dca.muted .nm { color: var(--dim); }
+  .dca.empty { opacity: .35; } .dca.empty .st { visibility: hidden; }
+  .dca.soon { box-shadow: 0 0 0 2px var(--accent); }
+
+  /* script */
+  .lower { display: grid; grid-template-columns: 1fr 300px; min-height: 0; }
+  #script { overflow-y: auto; padding: 14px; background: #0e0f12; }
+  .half { position: relative; overflow: hidden; margin: 0 auto 12px; max-width: 760px; background: #fff; border-radius: 3px; }
+  .half.spread { aspect-ratio: 396 / 612; } .half.full { aspect-ratio: 612 / 792; }
+  .half img { position: absolute; top: 0; height: 100%; display: block; }
+  .half.spread img { width: 200%; } .half.full img { width: 100%; left: 0; }
+  .half .tag { position: absolute; right: 6px; top: 6px; background: rgba(20,22,26,.75); color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 10px; }
+  .shade { position: absolute; left: 0; right: 0; background: rgba(14,15,18,.62); pointer-events: none; }
+  .mark { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid var(--cue); pointer-events: none; }
+  .mark span { position: absolute; left: 0; bottom: 0; background: var(--cue); color: #fff; font-weight: 700; font-size: 12px; padding: 1px 7px; border-radius: 0 4px 0 0; }
+  .mark.other { border-top-color: rgba(224,50,60,.55); border-top-style: dashed; }
+  .mark.other span { background: rgba(224,50,60,.7); }
+  .mark.nextmark { border-top-color: var(--accent); } .mark.nextmark span { background: var(--accent); color: #2b1d00; }
+  .standby { color: var(--dim); text-align: center; padding: 60px 20px; font-size: 15px; }
+
+  aside { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; min-height: 0; }
+  aside h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 0; padding: 10px 12px 5px; }
+  .chs { padding: 0 8px 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+  .chn { display: grid; grid-template-columns: 22px 1fr; gap: 4px; font-size: 12px; padding: 2px 5px; border-radius: 4px; background: var(--panel2); }
+  .chn b { color: var(--dim); font-weight: 600; text-align: right; }
+  .chn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chn.out { opacity: .4; text-decoration: line-through; }
+  .chn.live span { color: var(--live); font-weight: 650; }
+  #log { font: 11px/1.45 ui-monospace, Menlo, Consolas, monospace; padding: 0 10px 12px; color: var(--dim); word-break: break-all; }
+  #log .cue { display: block; color: #ff6b73; padding: 3px 0 0; border: 0; font-size: 11px; }
+  #log .err { color: #ff6b73; } #log .info { color: var(--accent); }
+  .help { padding: 8px 12px; font-size: 12px; color: var(--dim); border-top: 1px solid var(--line); }
+  .help code { color: var(--text); font-size: 11.5px; }
+
+  /* /control : everything except the script */
+  body.noscript #script { display: none; }
+  body.noscript .lower { grid-template-columns: 1fr; }
+  body.noscript aside { display: block; border-left: 0; }
+  body.noscript .chs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  body.noscript .chn { font-size: 13px; padding: 4px 7px; }
+  @media (max-width: 1100px) { body { grid-template-columns: 220px 1fr; } .lower { grid-template-columns: 1fr; } aside { display: none; } .dcas { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>The Three Musketeers &middot; DCA cues</h1>
+  <div class="status"><span class="dot" id="dot"></span><span id="stat">connecting…</span></div>
+  <form id="cfg">
+    WING IP <input id="ip" placeholder="blank = dry run" autocomplete="off">
+    <input id="port" class="port" value="2223" autocomplete="off">
+    <button class="btn">Save</button>
+    <button class="btn" type="button" id="resync" title="Re-send the whole scene setup for the current cue">Resync console</button>
+  </form>
+</header>
+
+<nav id="list"></nav>
+
+<main>
+  <section class="now">
+    <div class="nowbox cur"><small>Current cue</small><div class="id" id="curId">—</div><div class="lbl" id="curLbl">Standby</div><div class="chg" id="curLive"></div></div>
+    <div class="nowbox nxt"><small>Next (GO)</small><div class="id" id="nxtId">—</div><div class="lbl" id="nxtLbl"></div><div class="chg" id="nxtChg"></div></div>
+    <div class="go"><button id="go">GO</button><button id="back">◀ Back</button></div>
+  </section>
+  <section class="dcas" id="dcas"></section>
+  <section class="lower">
+    <div id="script"></div>
+    <aside>
+      <h2>Channels</h2><div class="chs" id="chs"></div>
+      <h2>Sent to console</h2><div id="log"></div>
+      <div class="help">Keys: <code>Space</code>/<code>→</code> GO, <code>←</code> back.<br>HTTP: <code id="httpHint"></code></div>
+    </aside>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const NOSCRIPT = /^\/control/.test(location.pathname) || new URLSearchParams(location.search).has('noscript');
+document.body.classList.toggle('noscript', NOSCRIPT);
+let show = null, snap = { index: -1, wing: {}, log: [] }, drawnIndex = null;
+
+const api = (path, opts) => fetch(path, opts).then((r) => r.json());
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sceneOf = (cue) => show.scenes.find((s) => s.id === cue.scene);
+
+function buildList() {
+  let html = '', act = null;
+  for (const s of show.scenes) {
+    if (s.act !== act) { act = s.act; html += `<div class="act">${act ? 'Act ' + act : 'Pre-show'}</div>`; }
+    html += `<div class="scene">${s.id} <span>${esc(s.title)}</span></div>`;
+    show.cues.forEach((c, i) => {
+      if (c.scene === s.id) html += `<button class="cue" data-i="${i}" data-id="${c.id}"><b>${c.id}</b><i>${esc(c.label)}</i></button>`;
+    });
+  }
+  $('list').innerHTML = html;
+  $('list').addEventListener('click', (e) => {
+    const b = e.target.closest('.cue');
+    if (b) api('/api/goto/' + b.dataset.id);
+  });
+}
+
+function changes(prev, cue) {
+  // what GO on `cue` does, relative to `prev`
+  const sc = sceneOf(cue);
+  const nm = (m) => { const c = sc.chars.find((x) => x.mic === m); return `${esc(c.dcaName)} <small>D${c.dca}</small>`; };
+  if (!prev || prev.scene !== cue.scene) {
+    return `<span>New scene: ${sc.chars.length} DCAs &middot; </span><span class="u">live: ${cue.live.map(nm).join(', ') || 'none'}</span>`;
+  }
+  const on = cue.live.filter((m) => !prev.live.includes(m)), off = prev.live.filter((m) => !cue.live.includes(m));
+  return [on.length ? `<span class="u">unmute ${on.map(nm).join(', ')}</span>` : '', off.length ? `<span class="m">mute ${off.map(nm).join(', ')}</span>` : ''].filter(Boolean).join(' &middot; ') || 'no change';
+}
+
+function render() {
+  if (!show) return;
+  const i = snap.index, cue = show.cues[i] || null, next = show.cues[i + 1] || null;
+  const w = snap.wing || {};
+  $('dot').className = 'dot ' + (w.dryRun ? 'dry' : w.online ? 'on' : 'off');
+  $('stat').textContent = w.dryRun ? 'Dry run - no console IP set' : w.online ? `WING online ${w.ip}` : `WING not answering at ${w.ip}`;
+  if (document.activeElement !== $('ip')) $('ip').value = w.ip || '';
+  if (document.activeElement !== $('port')) $('port').value = w.port || 2223;
+
+  $('curId').textContent = cue ? cue.id : '—';
+  $('curLbl').textContent = cue ? `${sceneOf(cue).title} — ${cue.label}` : 'Standby: nothing sent yet';
+  $('curLive').innerHTML = cue ? `<span class="u">live: ${cue.live.map((m) => esc(sceneOf(cue).chars.find((c) => c.mic === m).dcaName)).join(', ') || 'none (all muted)'}</span>` : '';
+  $('nxtId').textContent = next ? next.id : 'END';
+  $('nxtLbl').textContent = next ? next.label : 'End of show';
+  $('nxtChg').innerHTML = next ? changes(cue, next) : '';
+
+  // DCA strip
+  const sc = cue ? sceneOf(cue) : null;
+  const soon = new Set();
+  if (cue && next && next.scene === cue.scene) {
+    for (const c of sc.chars) if (cue.live.includes(c.mic) !== next.live.includes(c.mic)) soon.add(c.dca);
+  }
+  let d = '';
+  for (let n = 1; n <= 16; n++) {
+    const c = sc && sc.chars.find((x) => x.dca === n);
+    const live = c && cue.live.includes(c.mic);
+    d += `<div class="dca ${c ? (live ? 'live' : 'muted') : 'empty'} ${soon.has(n) ? 'soon' : ''}"><div class="n">DCA ${n}</div><div class="nm">${c ? esc(c.dcaName) : '&nbsp;'}</div><div class="ch">${c ? 'ch ' + c.mic : '&nbsp;'}</div><div class="st">${live ? 'LIVE' : 'MUTED'}</div></div>`;
+  }
+  $('dcas').innerHTML = d;
+
+  // channels
+  $('chs').innerHTML = show.mics.map((m) => {
+    const c = sc && sc.chars.find((x) => x.mic === m.mic);
+    const live = c && cue.live.includes(m.mic);
+    return `<div class="chn ${sc && !c ? 'out' : ''} ${live ? 'live' : ''}" title="${c ? 'DCA ' + c.dca : 'channel muted'}"><b>${m.mic}</b><span>${esc(c ? c.name : m.name)}</span></div>`;
+  }).join('');
+
+  // cue list highlight
+  document.querySelectorAll('nav .cue').forEach((b) => {
+    const bi = +b.dataset.i;
+    b.classList.toggle('current', bi === i);
+    b.classList.toggle('next', bi === i + 1);
+  });
+  if (drawnIndex !== i) {
+    const cur = document.querySelector('nav .cue.current') || document.querySelector('nav .cue.next');
+    if (cur) cur.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    renderScript(cue, next);
+    drawnIndex = i;
+  }
+
+  $('log').innerHTML = (snap.log || []).slice().reverse().map((l) => `<div class="${l.dir}">${esc(l.text)}</div>`).join('');
+}
+
+// ---- the portion of the script that belongs to the current cue
+function halves() {
+  const out = [];
+  for (let p = 2; p <= show.pageCount; p++) {
+    if (show.fullPages.includes(p)) out.push({ page: p, side: 'F' });
+    else out.push({ page: p, side: 'L' }, { page: p, side: 'R' });
+  }
+  return out;
+}
+function renderScript(cue, next) {
+  const el = $('script');
+  if (NOSCRIPT) return;
+  if (!cue) {
+    const first = show.cues[0];
+    el.innerHTML = `<div class="standby">Standby. Press <b>GO</b> to fire cue ${first.id} (${esc(first.label)}).<br>Until then nothing is sent to the console.</div>`;
+    return;
+  }
+  const all = halves();
+  const idx = (c) => all.findIndex((h) => h.page === c.page && h.side === c.side);
+  const a = idx(cue);
+  let b = next ? idx(next) : Math.min(all.length - 1, a + 3);
+  if (next && next.y < 0.06 && b > a) b -= 1;                 // next cue sits at the very top of a page
+  const pad = (n) => String(n).padStart(2, '0');
+  let html = '';
+  for (let k = a; k <= b; k++) {
+    const h = all[k];
+    const marks = show.cues.filter((c) => c.page === h.page && c.side === h.side);
+    let over = '';
+    if (k === a) over += `<div class="shade" style="top:0;height:${Math.max(0, cue.y * 100 - 0.6)}%"></div>`;
+    if (next && k === idx(next)) over += `<div class="shade" style="top:${next.y * 100 - 0.6}%;bottom:0"></div>`;
+    for (const c of marks) {
+      const cls = c.id === cue.id ? '' : next && c.id === next.id ? 'nextmark' : 'other';
+      over += `<div class="mark ${cls}" ${c.id === cue.id ? 'id="here"' : ''} style="top:${c.y * 100 - 0.6}%"><span>${c.id}</span></div>`;
+    }
+    const label = h.side === 'F' ? `PDF p.${h.page}` : `PDF p.${h.page} ${h.side === 'L' ? 'left' : 'right'}`;
+    html += `<div class="half ${h.side === 'F' ? 'full' : 'spread'}"><img src="pages/p${pad(h.page)}.jpg" style="${h.side === 'R' ? 'left:-100%' : 'left:0'}" alt="">${over}<div class="tag">${label}</div></div>`;
+  }
+  el.innerHTML = html;
+  requestAnimationFrame(() => {
+    const here = $('here');
+    if (here) el.scrollTop = Math.max(0, here.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - 70);
+  });
+}
+
+// ---- controls
+$('go').onclick = () => api('/api/next');
+$('back').onclick = () => api('/api/prev');
+$('resync').onclick = () => api('/api/resync');
+$('cfg').onsubmit = (e) => {
+  e.preventDefault();
+  api('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip: $('ip').value, port: $('port').value }) });
+  $('ip').blur(); $('port').blur();
+};
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); api('/api/next'); }
+  if (e.code === 'ArrowLeft') { e.preventDefault(); api('/api/prev'); }
+});
+$('httpHint').textContent = `${location.origin}/api/next`;
+
+api('/api/show').then((s) => {
+  show = s; buildList(); render();
+  const es = new EventSource('/events');
+  es.onmessage = (e) => { snap = JSON.parse(e.data); render(); };
+});
+</script>
+</body>
+</html>

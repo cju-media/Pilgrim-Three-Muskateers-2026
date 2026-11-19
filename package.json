@@ -1,0 +1,12 @@
+{
+  "name": "three-musketeers-dca-cues",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DCA cue runner for The Three Musketeers on a Behringer WING",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "python3 tools/build.py"
+  },
+  "engines": { "node": ">=18" }
+}

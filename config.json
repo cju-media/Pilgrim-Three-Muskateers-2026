@@ -1,0 +1,15 @@
+{
+  "httpPort": 3000,
+  "wing": {
+    "ip": "192.168.1.175",
+    "port": 2223
+  },
+  "dcaCount": 14,
+  "nameSources": "MOD",
+  "sourceMap": {
+    "18": "LCL/5",
+    "20": 19,
+    "21": 20
+  },
+  "automix": "X"
+}
